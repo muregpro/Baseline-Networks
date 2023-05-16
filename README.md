@@ -7,6 +7,10 @@
 git clone https://github.com/muregpro/Baseline-Networks.git
 ```
 
+## Downloading data
+
+The dataset may be downloaded from [this link](https://doi.org/10.5281/zenodo.7870104). For training, two directories are requried: `train` and `val` and the user may split data into these directories before training.
+
 ## Creating a docker container for µ-reg
 
 1) navigate to root directory
