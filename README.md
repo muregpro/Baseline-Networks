@@ -33,9 +33,17 @@ docker exec mureg <command>
 Examples:
 ```
 docker exec mureg ls mureg
+```
+```
 docker exec mureg python3 mureg/train_localnet.py
+```
+```
 docker exec mureg python3 mureg/train_voxelmorph.py
+```
+```
 docker exec mureg python3 mureg/test_localnet.py
+```
+```
 docker exec mureg python3 mureg/test_voxelmorph.py
 ```
 
