@@ -113,4 +113,4 @@ for trial in range(0, num_trials):
     print('    Validation Dice: ', np.mean(dice_scores))
     if trial % 8 == 0:
         registration_model.save(os.path.join(model_save_path, f'registration_model_trial_{trial}'))
-	print('Model saved!')
+        print('Model saved!')
