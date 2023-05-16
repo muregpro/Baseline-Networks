@@ -2,11 +2,16 @@
 
 # Usage
 
+## Cloning the repository
+```
+git clone https://github.com/muregpro/Baseline-Networks.git
+```
+
 ## Creating a docker container for µ-reg
 
 1) navigate to root directory
   ```
-  cd mureg
+  cd Baseline-Networks
   ```
 
 2) build mureg docker image from Dockerfile
@@ -32,19 +37,19 @@ docker exec mureg <command>
 ```
 Examples:
 ```
-docker exec mureg ls mureg
+docker exec mureg ls
 ```
 ```
-docker exec mureg python3 mureg/train_localnet.py
+docker exec mureg python3 train_localnet.py
 ```
 ```
-docker exec mureg python3 mureg/train_voxelmorph.py
+docker exec mureg python3 train_voxelmorph.py
 ```
 ```
-docker exec mureg python3 mureg/test_localnet.py
+docker exec mureg python3 test_localnet.py
 ```
 ```
-docker exec mureg python3 mureg/test_voxelmorph.py
+docker exec mureg python3 test_voxelmorph.py
 ```
 
 
