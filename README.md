@@ -21,7 +21,7 @@ docker container create -it --name mureg mureg
 
 4) start the mureg docker container
 ```
-docker start container mureg
+docker container mureg
 ```
 
 
