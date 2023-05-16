@@ -1,6 +1,6 @@
 # Baseline Networks for the MR to Ultrasound Registration for Prostate (µ-RegPro) Challenge
 
-The goal of this challenge is multimodal image registration between pre-operative MR and intra-operative Ultrasound for the prostate gland. Details of the challenge are available [here](https://muregpro.github.io/). In this repository we build two simple baselines (i.e., variants of [localnet](https://www.sciencedirect.com/science/article/pii/S1361841518301051) and [voxelmorph](https://ieeexplore.ieee.org/document/8633930), with simplified backbone networks) for use with our dataset. The usage instructions are outlined below.
+The goal of this challenge is multimodal image registration between pre-operative MR and intra-operative Ultrasound for the prostate gland. Details of the challenge are available [here](https://muregpro.github.io/). In this repository we build two simple baselines (i.e., variants of [localnet](https://www.sciencedirect.com/science/article/pii/S1361841518301051) and [voxelmorph](https://ieeexplore.ieee.org/document/8633930), with simplified backbone networks) for use with our dataset. The usage instructions are outlined below. Note that these are small, simplified networks, using resampled smaller images for training, for demonstration purposes on a wide variety of hardware.
 
 # Usage
 
