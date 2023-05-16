@@ -53,3 +53,8 @@ docker exec mureg python3 mureg/test_voxelmorph.py
 ```
 docker container stop mureg
 ```
+
+## Removing the docker container
+```
+docker container rm -f mureg
+```
