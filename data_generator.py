@@ -81,7 +81,7 @@ def test_generator(f_path, batch_size, moving_image_shape, fixed_image_shape, st
     
     for step in range(n_steps):
     
-        batch_names = all_names[start_index: start_index + (batch_size * (step+1))]
+        batch_names = all_names[step*batch_size:(step*batch_size)+batch_size]
         
         moving_images_batch = np.zeros((batch_size, *moving_image_shape))
         fixed_images_batch = np.zeros((batch_size, *fixed_image_shape))
