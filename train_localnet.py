@@ -105,7 +105,7 @@ for trial in range(0, num_trials):
                 
                 dice_score = np.array(-1.0 * vxm.losses.Dice().loss(tf.convert_to_tensor(moved_labels_val, dtype='float32'), tf.convert_to_tensor(fixed_labels_val, dtype='float32')))
                 dice_scores.append(dice_score)
-            except IndexError:
+            except (IndexError, StopIteration) as e:
                 break
     val_dice.append(np.mean(dice_scores))
     plt.plot(val_dice, 'r')
