@@ -1,6 +1,6 @@
 import numpy as np
-from metrics import DSC, RDSC, centroid_maes, TRE, RTRE, RTs, HD95, StDJD 
-from data_generator import test_generator, resize_3d_image
+from metrics import DSC, RDSC, centroid_maes, TRE, RTRE, RTs, HD95 #, StDJD 
+from mureg_scripts.data_generator import test_generator, resize_3d_image
 
 import voxelmorph as vxm
 
@@ -8,28 +8,55 @@ from tensorflow import keras
 
 import tensorflow as tf
 
-val_path = r'nifti_data/val'
+val_path = r'nifti_data/holdout'
 
 batch_size = 1
 
-# moving_image_shape = (81, 118, 88, 1)
-# fixed_image_shape = (120, 128, 128, 1)
+moving_image_shape = (81, 118, 88, 1)
+fixed_image_shape = (120, 128, 128, 1)
 
-moving_image_shape = (64, 64, 64, 1)
-fixed_image_shape = (64, 64, 64, 1)
-
-model_save_path  =r'registration_model_trial_288'
+model_save_path  =r'ckpts_docker/localnet_model_checkpoints/registration_model_trial_288'
 lambda_param = 0.05
 
 spatial_transformer = vxm.layers.SpatialTransformer(name='transformer')
 
 registration_model = keras.models.load_model(model_save_path, custom_objects={'loss': [vxm.losses.MSE().loss, vxm.losses.Dice().loss, vxm.losses.Grad('l2').loss], 'loss_weights': [0.5, 1, lambda_param]})
 
+def resize_3d_image_batch(images, size):
+    resized_images = np.zeros((len(images), *size))
+    for i in range(len(images)):
+        resized_images[i] = resize_3d_image(images[i], size)
+    return resized_images
+
+
 def evaulation_function(moving_image, fixed_image, moving_label):
-    temp_moving_label = np.zeros(np.shape(moving_image))
-    temp_fixed_label = np.zeros(np.shape(fixed_image))
-    _, _, ddf = registration_model.predict((moving_image, fixed_image, temp_moving_label, temp_fixed_label), verbose=0)
-    moved_label = spatial_transformer([moving_label, ddf])
+    
+    real_fixed_image_shape = np.shape(fixed_image)[1:]
+    real_moving_image_shape = np.shape(moving_image)[1:]
+    
+    moving_image_shape = (64, 64, 64, 1)
+    fixed_image_shape = (64, 64, 64, 1)
+    
+    resized_moving_image = resize_3d_image_batch(moving_image, moving_image_shape)
+    resized_fixed_image = resize_3d_image_batch(fixed_image, fixed_image_shape)
+    
+    temp_moving_label = np.zeros(np.shape(resized_moving_image))
+    temp_fixed_label = np.zeros(np.shape(resized_fixed_image))
+    
+    # localnet
+    _, _, ddf = registration_model.predict((resized_moving_image, resized_fixed_image, temp_moving_label, temp_fixed_label), verbose=0)
+    
+    #voxelmorph
+    # _, ddf = registration_model.predict((moving_image, fixed_image), verbose=0)
+    
+    resized_ddf = np.zeros((1, *real_moving_image_shape[:-1], 3))
+    
+    resized_ddf[:, :, :, :, 0:1] = np.expand_dims(resize_3d_image_batch(ddf[:, :, :, :, 0], real_moving_image_shape), axis=0)
+    resized_ddf[:, :, :, :, 1:2] = np.expand_dims(resize_3d_image_batch(ddf[:, :, :, :, 1], real_moving_image_shape), axis=0)
+    resized_ddf[:, :, :, :, 2:3] = np.expand_dims(resize_3d_image_batch(ddf[:, :, :, :, 2], real_moving_image_shape), axis=0)
+    
+    moved_label = spatial_transformer([moving_label, resized_ddf])
+    
     return moved_label, ddf
     
 
@@ -96,8 +123,8 @@ for label in range(6):
     all_lim_maes.append(lim_mae)
     
 
-fin_DSC = np.mean(all_dscs)
-fin_RDSC = np.mean(all_rdscs)
+fin_DSC = np.mean(all_dscs[0])
+fin_RDSC = np.mean(all_rdscs[0])
 
 
 fin_HD95 = np.mean(all_hd95s)
@@ -142,42 +169,9 @@ print(f'\nALL METRICS:\n\n'
       )
 
 def score_calculator(fin_DSC, fin_RDSC, fin_HD95, fin_lim_HD95, fin_TRE, fin_lim_TRE, fin_RTRE, fin_lim_RTRE, fin_RTs, fin_lim_RTs):
-    score = 0.2*fin_DSC + 0.1*(fin_RDSC) + 0.3*(1-(fin_TRE/fin_lim_TRE)) + 0.1*(1-(fin_RTRE/fin_lim_RTRE)) + 0.1*(1-(fin_RTs/fin_lim_RTs)) + 0.2*(1-(fin_HD95/fin_lim_HD95))
+    score = 0.2*fin_DSC + 0.1*(fin_RDSC) + 0.3*(1-np.clip(fin_TRE/fin_lim_TRE, 0, 1)) + 0.1*(1-np.clip(fin_RTRE/fin_lim_RTRE, 0, 1)) + 0.1*(1-np.clip(fin_RTs/fin_lim_RTs, 0, 1)) + 0.2*(1-np.clip(fin_HD95/fin_lim_HD95, 0, 1))
     return score
 
 score = score_calculator(fin_DSC, fin_RDSC, fin_HD95, fin_lim_HD95, fin_TRE, fin_lim_TRE, fin_RTRE, fin_lim_RTRE, fin_RTs, fin_lim_RTs)
 
 print(f'\nFinal Score: {score}')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# class Evaluation():
-#     def __init__(self):
-        
-#         val_path = r'/home/s-sd/Desktop/mu_reg_miccai_challenge/nifti_data/holdout'
-        
-#         batch_size = 1
-        
-#         # moving_image_shape = (81, 118, 88, 1)
-#         # fixed_image_shape = (120, 128, 128, 1)
-        
-#         moving_image_shape = (64, 64, 64, 1)
-#         fixed_image_shape = (64, 64, 64, 1)
-        
-#         model_save_path  =r'/home/s-sd/Desktop/mu_reg_miccai_challenge/ckpts_docker/localnet_model_checkpoints/registration_model_trial_288'
-#         lambda_param = 0.05
-        
-#         spatial_transformer = vxm.layers.SpatialTransformer(name='transformer')
-        
-#         registration_model = keras.models.load_model(model_save_path, custom_objects={'loss': [vxm.losses.MSE().loss, vxm.losses.Dice().loss, vxm.losses.Grad('l2').loss], 'loss_weights': [0.5, 1, lambda_param]})

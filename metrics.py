@@ -6,10 +6,14 @@ import numpy as np
 from scipy.ndimage import _ni_support
 from scipy.ndimage import generate_binary_structure, distance_transform_edt, binary_erosion
 
-import SimpleITK as sitk
+from mureg_scripts.data_generator import resize_3d_image
+
+# import SimpleITK as sitk
 
 # adapted from voxelmorph
 def DSC(y_true, y_pred):
+    
+    y_pred = tf.convert_to_tensor(resize_3d_image(y_pred, np.shape(y_true)))
     
     ndims = len(y_pred.get_shape().as_list()) - 2
     vol_axes = list(range(1, ndims + 1))
@@ -23,6 +27,9 @@ def DSC(y_true, y_pred):
     return dice
 
 def RDSC(y_true, y_pred):
+    
+    y_pred = tf.convert_to_tensor(resize_3d_image(y_pred, np.shape(y_true)))
+    
     ndims = len(y_pred.get_shape().as_list()) - 2
     vol_axes = list(range(1, ndims + 1))
 
@@ -34,11 +41,11 @@ def RDSC(y_true, y_pred):
     dice_scores_all = div_no_nan(top, bottom)
     sorted_indices = tf.argsort(dice_scores_all, axis=0, direction='DESCENDING')
     num_samples_dsc = tf.convert_to_tensor(tf.math.round(len(sorted_indices) * 0.68))
-    dsc_scores_for_robustness = dice_scores_all[0:tf.cast(num_samples_dsc, dtype=tf.int32)]
+    dsc_scores_for_robustness = tf.gather(dice_scores_all, sorted_indices[:tf.cast(num_samples_dsc, dtype=tf.int32)])
     rdsc = tf.reduce_mean(tf.squeeze(dsc_scores_for_robustness))
     return rdsc
 
-def compute_centroids(y_true, y_pred):
+def compute_centroids(y_true, y_pred):    
     # find centroid locations in y_true
     y_true_centroids = []
     for i in range(len(y_true)):
@@ -57,6 +64,9 @@ def compute_centroids(y_true, y_pred):
     return y_true_centroids, y_pred_centroids
 
 def centroid_maes(y_true, y_pred):
+    
+    y_pred = tf.convert_to_tensor(resize_3d_image(y_pred, np.shape(y_true)))
+    
     y_true_centroids, y_pred_centroids = compute_centroids(y_true, y_pred)
     maes = tf.keras.losses.MAE(y_true_centroids, y_pred_centroids)
     return maes
@@ -83,7 +93,8 @@ def RTRE(all_label_maes):
     
     sorted_indices = tf.argsort(TREs, axis=0, direction='ASCENDING')
     num_samples_tre = tf.convert_to_tensor(tf.math.round(len(sorted_indices) * 0.68))
-    tres_for_robustness = TREs[0:tf.cast(num_samples_tre, dtype=tf.int32)]
+    # tres_for_robustness = TREs[0:tf.cast(num_samples_tre, dtype=tf.int32)]
+    tres_for_robustness = tf.gather(TREs, sorted_indices[:tf.cast(num_samples_tre, dtype=tf.int32)])
     rtre = tf.reduce_mean(tf.squeeze(tres_for_robustness))
     return rtre
 
@@ -94,7 +105,8 @@ def RTs(all_label_maes):
         
         sorted_indices = tf.argsort(case, axis=0, direction='ASCENDING')
         num_samples_case_rts = tf.convert_to_tensor(tf.math.round(len(sorted_indices) * 0.68))
-        case_for_rts = case[0:tf.cast(num_samples_case_rts, dtype=tf.int32)]
+        # case_for_rts = case[0:tf.cast(num_samples_case_rts, dtype=tf.int32)]
+        case_for_rts = tf.gather(case, sorted_indices[:tf.cast(num_samples_case_rts, dtype=tf.int32)])
         
         case_rms = RMS(case_for_rts)
         TREs.append(case_rms)
@@ -103,8 +115,12 @@ def RTs(all_label_maes):
 
 # adapted from loli/medpy
 def surface_distances(result, reference, voxelspacing=None, connectivity=1):
+    
+    result = resize_3d_image(result, np.shape(reference))
+    
     result = np.atleast_1d(np.array(result).astype(bool))
     reference = np.atleast_1d(np.array(reference).astype(bool))
+    
     if voxelspacing is not None:
         voxelspacing = _ni_support._normalize_sequence(voxelspacing, result.ndim)
         voxelspacing = np.asarray(voxelspacing, dtype=np.float64)
@@ -123,6 +139,9 @@ def surface_distances(result, reference, voxelspacing=None, connectivity=1):
 
 # adapted from loli/medpy
 def HD95(y_true, y_pred):
+    
+    y_pred = resize_3d_image(y_pred, np.shape(y_true))
+    
     voxelspacing = None
     connectivity = 1
     hd1 = surface_distances(y_pred, y_true, voxelspacing, connectivity)
@@ -133,9 +152,9 @@ def HD95(y_true, y_pred):
     except IndexError:
         return 0.0
 
-def StDJD(ddf):
-    ddf_sitk = sitk.GetImageFromArray(ddf)
-    ddf_sitk.SetOrigin((0, 0, 0))
-    jacobian_determinant = sitk.DisplacementFieldJacobianDeterminant(ddf_sitk)
-    std_jacobian_determinant = np.std(sitk.GetArrayFromImage(jacobian_determinant))
-    return std_jacobian_determinant
+# def StDJD(ddf):
+#     ddf_sitk = sitk.GetImageFromArray(ddf)
+#     ddf_sitk.SetOrigin((0, 0, 0))
+#     jacobian_determinant = sitk.DisplacementFieldJacobianDeterminant(ddf_sitk)
+#     std_jacobian_determinant = np.std(sitk.GetArrayFromImage(jacobian_determinant))
+#     return std_jacobian_determinant
