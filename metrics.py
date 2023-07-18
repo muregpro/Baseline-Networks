@@ -7,6 +7,7 @@ from scipy.ndimage import _ni_support
 from scipy.ndimage import generate_binary_structure, distance_transform_edt, binary_erosion
 
 from data_generator import resize_3d_image
+from tqdm import tqdm
 
 # import SimpleITK as sitk
 
@@ -134,7 +135,8 @@ def surface_distances(result, reference, voxelspacing=None, connectivity=1):
 def HD95(y_true, y_pred):
     
     all_hd95s = []
-    for i in range(len(y_true)):
+    print('computing hd')
+    for i in tqdm(range(len(y_true))):
         
         if np.shape(y_true[i]) != np.shape(y_pred[i]):
             y_pred_to_use = resize_3d_image(y_pred, np.shape(y_true))
