@@ -1,6 +1,6 @@
 import numpy as np
 from metrics import DSC, RDSC, centroid_maes, TRE, RTRE, RTs, HD95 #, StDJD 
-from mureg_scripts.data_generator import test_generator, resize_3d_image
+from data_generator import test_generator, resize_3d_image
 
 import voxelmorph as vxm
 
@@ -8,14 +8,14 @@ from tensorflow import keras
 
 import tensorflow as tf
 
-val_path = r'nifti_data/holdout'
+val_path = r'/home/s-sd/Desktop/mu_reg_miccai_challenge/nifti_data/holdout'
 
 batch_size = 1
 
 moving_image_shape = (81, 118, 88, 1)
 fixed_image_shape = (120, 128, 128, 1)
 
-model_save_path  =r'ckpts_docker/localnet_model_checkpoints/registration_model_trial_288'
+model_save_path  =r'/home/s-sd/Desktop/mu_reg_miccai_challenge/ckpts_docker/voxelmorph_model_checkpoints/registration_model_trial_328'
 lambda_param = 0.05
 
 spatial_transformer = vxm.layers.SpatialTransformer(name='transformer')
@@ -44,16 +44,16 @@ def evaulation_function(moving_image, fixed_image, moving_label):
     temp_fixed_label = np.zeros(np.shape(resized_fixed_image))
     
     # localnet
-    _, _, ddf = registration_model.predict((resized_moving_image, resized_fixed_image, temp_moving_label, temp_fixed_label), verbose=0)
+    # _, _, ddf = registration_model.predict((resized_moving_image, resized_fixed_image, temp_moving_label, temp_fixed_label), verbose=0)
     
     #voxelmorph
-    # _, ddf = registration_model.predict((moving_image, fixed_image), verbose=0)
+    _, ddf = registration_model.predict((resized_moving_image, resized_fixed_image), verbose=0)
     
-    resized_ddf = np.zeros((1, *real_moving_image_shape[:-1], 3))
+    resized_ddf = np.zeros((1, *real_fixed_image_shape[:-1], 3))
     
-    resized_ddf[:, :, :, :, 0:1] = np.expand_dims(resize_3d_image_batch(ddf[:, :, :, :, 0], real_moving_image_shape), axis=0)
-    resized_ddf[:, :, :, :, 1:2] = np.expand_dims(resize_3d_image_batch(ddf[:, :, :, :, 1], real_moving_image_shape), axis=0)
-    resized_ddf[:, :, :, :, 2:3] = np.expand_dims(resize_3d_image_batch(ddf[:, :, :, :, 2], real_moving_image_shape), axis=0)
+    resized_ddf[:, :, :, :, 0:1] = np.expand_dims(resize_3d_image_batch(ddf[:, :, :, :, 0], real_fixed_image_shape), axis=0)
+    resized_ddf[:, :, :, :, 1:2] = np.expand_dims(resize_3d_image_batch(ddf[:, :, :, :, 1], real_fixed_image_shape), axis=0)
+    resized_ddf[:, :, :, :, 2:3] = np.expand_dims(resize_3d_image_batch(ddf[:, :, :, :, 2], real_fixed_image_shape), axis=0)
     
     moved_label = spatial_transformer([moving_label, resized_ddf])
     
@@ -104,6 +104,10 @@ all_hd95s = []
 all_lim_hd95s = []
 all_lim_maes = []
 
+print('Finished predictions!')
+
+i = 0
+
 # compute metrics
 for label in range(6):
     dsc = DSC(tf.convert_to_tensor(all_labels_fixed_labels[label], dtype=tf.double), tf.convert_to_tensor(all_labels_moved_labels[label], dtype=tf.double))
@@ -121,6 +125,8 @@ for label in range(6):
     
     all_lim_hd95s.append(lim_hd95)
     all_lim_maes.append(lim_mae)
+    i += 1
+    print(i)
     
 
 fin_DSC = np.mean(all_dscs[0])

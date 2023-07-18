@@ -6,15 +6,13 @@ import numpy as np
 from scipy.ndimage import _ni_support
 from scipy.ndimage import generate_binary_structure, distance_transform_edt, binary_erosion
 
-from mureg_scripts.data_generator import resize_3d_image
+from data_generator import resize_3d_image
 
 # import SimpleITK as sitk
 
 # adapted from voxelmorph
 def DSC(y_true, y_pred):
-    
-    y_pred = tf.convert_to_tensor(resize_3d_image(y_pred, np.shape(y_true)))
-    
+        
     ndims = len(y_pred.get_shape().as_list()) - 2
     vol_axes = list(range(1, ndims + 1))
 
@@ -27,9 +25,7 @@ def DSC(y_true, y_pred):
     return dice
 
 def RDSC(y_true, y_pred):
-    
-    y_pred = tf.convert_to_tensor(resize_3d_image(y_pred, np.shape(y_true)))
-    
+        
     ndims = len(y_pred.get_shape().as_list()) - 2
     vol_axes = list(range(1, ndims + 1))
 
@@ -63,10 +59,7 @@ def compute_centroids(y_true, y_pred):
     y_pred_centroids = tf.stack(y_pred_centroids)
     return y_true_centroids, y_pred_centroids
 
-def centroid_maes(y_true, y_pred):
-    
-    y_pred = tf.convert_to_tensor(resize_3d_image(y_pred, np.shape(y_true)))
-    
+def centroid_maes(y_true, y_pred):    
     y_true_centroids, y_pred_centroids = compute_centroids(y_true, y_pred)
     maes = tf.keras.losses.MAE(y_true_centroids, y_pred_centroids)
     return maes
@@ -140,17 +133,27 @@ def surface_distances(result, reference, voxelspacing=None, connectivity=1):
 # adapted from loli/medpy
 def HD95(y_true, y_pred):
     
-    y_pred = resize_3d_image(y_pred, np.shape(y_true))
-    
-    voxelspacing = None
-    connectivity = 1
-    hd1 = surface_distances(y_pred, y_true, voxelspacing, connectivity)
-    hd2 = surface_distances(y_true, y_pred, voxelspacing, connectivity)
-    try:
-        hd95 = np.percentile(np.hstack((hd1, hd2)), 95)
-        return hd95
-    except IndexError:
-        return 0.0
+    all_hd95s = []
+    for i in range(len(y_true)):
+        
+        if np.shape(y_true[i]) != np.shape(y_pred[i]):
+            y_pred_to_use = resize_3d_image(y_pred, np.shape(y_true))
+        else:
+            y_pred_to_use = y_pred[i:i+1]
+        
+        # print(np.shape(y_pred_to_use), np.shape(y_true[i:i+1]))
+        
+        voxelspacing = None
+        connectivity = 1
+        hd1 = surface_distances(y_pred_to_use, y_true[i:i+1], voxelspacing, connectivity)
+        hd2 = surface_distances(y_true[i:i+1], y_pred_to_use, voxelspacing, connectivity)
+        try:
+            hd95 = np.percentile(np.hstack((hd1, hd2)), 95)
+        except IndexError:
+            hd95 = 0.0
+        all_hd95s.append(hd95)
+    return np.mean(all_hd95s)
+
 
 # def StDJD(ddf):
 #     ddf_sitk = sitk.GetImageFromArray(ddf)
