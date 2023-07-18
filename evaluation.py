@@ -15,7 +15,7 @@ batch_size = 1
 moving_image_shape = (81, 118, 88, 1)
 fixed_image_shape = (120, 128, 128, 1)
 
-model_save_path  =r'/home/s-sd/Desktop/mu_reg_miccai_challenge/ckpts_docker/voxelmorph_model_checkpoints/registration_model_trial_328'
+model_save_path  =r'/home/s-sd/Desktop/mu_reg_miccai_challenge/ckpts_docker/localnet_model_checkpoints/registration_model_trial_288'
 lambda_param = 0.05
 
 spatial_transformer = vxm.layers.SpatialTransformer(name='transformer')
@@ -44,10 +44,10 @@ def evaulation_function(moving_image, fixed_image, moving_label):
     temp_fixed_label = np.zeros(np.shape(resized_fixed_image))
     
     # localnet
-    # _, _, ddf = registration_model.predict((resized_moving_image, resized_fixed_image, temp_moving_label, temp_fixed_label), verbose=0)
+    _, _, ddf = registration_model.predict((resized_moving_image, resized_fixed_image, temp_moving_label, temp_fixed_label), verbose=0)
     
     #voxelmorph
-    _, ddf = registration_model.predict((resized_moving_image, resized_fixed_image), verbose=0)
+    # _, ddf = registration_model.predict((resized_moving_image, resized_fixed_image), verbose=0)
     
     resized_ddf = np.zeros((1, *real_fixed_image_shape[:-1], 3))
     
@@ -109,7 +109,7 @@ print('Finished predictions!')
 i = 0
 
 # compute metrics
-for label in range(5):
+for label in range(6):
     dsc = DSC(tf.convert_to_tensor(all_labels_fixed_labels[label], dtype=tf.double), tf.convert_to_tensor(all_labels_moved_labels[label], dtype=tf.double))
     rdsc = RDSC(tf.convert_to_tensor(all_labels_fixed_labels[label], dtype=tf.double), tf.convert_to_tensor(all_labels_moved_labels[label], dtype=tf.double))
     mae = centroid_maes(tf.convert_to_tensor(all_labels_fixed_labels[label], dtype=tf.double), tf.convert_to_tensor(all_labels_moved_labels[label], dtype=tf.double))
@@ -167,10 +167,10 @@ fin_lim_RTs = RTs(all_lim_maes_array)
 print(f'\nALL METRICS:\n\n'
       f'DSC: {fin_DSC}\n',
       f'RDSC: {fin_RDSC}\n',
-      f'HD95: {fin_HD95/fin_lim_HD95}\n',
-      f'TRE: {fin_TRE/fin_lim_TRE}\n',
-      f'RTRE: {fin_RTRE/fin_lim_RTRE}\n',
-      f'RTs: {fin_RTs/fin_lim_RTs}\n',
+      f'HD95: {fin_HD95}\n',
+      f'TRE: {fin_TRE}\n',
+      f'RTRE: {fin_RTRE}\n',
+      f'RTs: {fin_RTs}\n',
       # f'StDJD: {fin_StDJD}\n'
       )
 
