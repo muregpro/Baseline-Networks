@@ -139,7 +139,7 @@ def HD95(y_true, y_pred):
     for i in tqdm(range(len(y_true))):
         
         if np.shape(y_true[i]) != np.shape(y_pred[i]):
-            y_pred_to_use = resize_3d_image(y_pred, np.shape(y_true))
+            y_pred_to_use = resize_3d_image(y_pred[i:i+1], np.shape(y_true[i:i+1]))
         else:
             y_pred_to_use = y_pred[i:i+1]
         
