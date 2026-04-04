@@ -13,7 +13,7 @@ git clone https://github.com/muregpro/Baseline-Networks.git
 
 ## Downloading data
 
-The dataset may be downloaded from [this link](https://doi.org/10.5281/zenodo.7870104). For training, two directories are requried: `nifti_data/train` and `nifti_data/val` and the user may split data into these, before training. The directory `nifti_data` must then be placed into the `Baseline-Networks` directory, so that they may be added into the docker container (see below).
+The dataset may be downloaded from [this link for the train and validation sets](https://doi.org/10.5281/zenodo.7870104) and [this link for the holdout test set](https://doi.org/10.5281/zenodo.19414480). For training, two directories are requried: `nifti_data/train` and `nifti_data/val` and the user may split data into these, before training. The directory `nifti_data` must then be placed into the `Baseline-Networks` directory, so that they may be added into the docker container (see below).
 
 ## Creating a docker container
 
